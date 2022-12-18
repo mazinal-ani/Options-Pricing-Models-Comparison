@@ -1,54 +1,89 @@
 #include <iostream>
 #include <cmath>
+#include <math.h>
 using namespace std;
 
 ///////////////////////////////////////////////////////////////////
 // Input definitions
 
-int underlying_price()
+float underlying_price()
 {
-    int price;
+    float price;
     cin >> price;
-    return(price);
+    return price;
 }
 
 int strike_price()
 {
     int strike;
     cin >> strike;
-    return(strike);
+    return strike;
 }
 
 int maturity()
 {
     int maturity;
     cin >> maturity;
-    return(maturity);
+    return maturity;
 }
 
-int interest_rate()
+float interest_rate()
 {
-    int ir;
+    float ir;
     cin >> ir;
     return ir;
 }
 
-int implied_volatility()
+float implied_volatility()
 {
-    int iv;
+    float iv;
     cin >> iv;
-    return(iv);
+    return iv;
 }
 ///////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////
 // Black-Scholes Model
 
-double black_scholes_model(asset, strike, days, interest, volatility)
+// Cumulative Standard Normal Distribution Function
+double c_std_normal_dist(double x)
 {
-    double volatility_squared = pow (volatility, 2)
-    double d1 = (log(asset / strike) + (interest + (volatility_squared / 2) * days)) / (volatility * sqrt(days))
-    double d2 = d1 - (volatility * sqrt(days))
+    const double pi = M_PI;
+    double result;
+
+    // Approximation using the trapezoidal rule
+
+    const int n = 100;
+    const int h = x / n;
+    for(int i = 0; i <= n; i++)
+    {
+        double t = -x + i * h;
+        double f = exp(-t * t / 2) / sqrt(2 * pi);
+        result += (i == 0 || i == n) ? f : 2 * f;
+    }
+    
+    result *= h / 2;
+
+    return result;
+}
+
+double black_scholes_model(float asset, int strike, int days, float interest, float volatility, bool call)
+{
+    float pred;
+    double volatility_squared = pow (volatility, 2);
+    double d1 = (log(asset / strike) + (interest + (volatility_squared / 2) * days)) / (volatility * sqrt(days));
+    double d2 = d1 - (volatility * sqrt(days));
+
+    if(call == true)
+    {
+        pred = asset * c_std_normal_dist(d1) - (strike * (exp (-interest * days)) * c_std_normal_dist(d2));
+    }
+    else
+    {
+        pred = (strike * (exp (-interest * days)) * c_std_normal_dist(-d2)) - (asset * c_std_normal_dist(-d1));
+    }
+
+    return pred;
 }
 ///////////////////////////////////////////////////////////////////
 

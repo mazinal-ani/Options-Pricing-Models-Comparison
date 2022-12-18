@@ -3,6 +3,7 @@
 #include <cmath>
 #include <math.h>
 #include <random>
+#include <iomanip>
 using namespace std;
 
 
@@ -37,7 +38,7 @@ float maturity()
 float div_yield()
 {
     float div;
-    cout << "What is the dividend yield? "
+    cout << "What is the dividend yield? ";
     cin >> div;
     return div;
 }
@@ -134,8 +135,12 @@ int main()
     float volatility = implied_volatility();
     bool call = true;
 
-    cout << black_scholes_model(asset, strike, years, div, interest, volatility, call);
-    cout << monte_carlo(asset, strike, years, interest, volatility);
+    float black_scholes_prediction = black_scholes_model(asset, strike, years, div, interest, volatility, call);
+    float monte_carlo_prediction = monte_carlo(asset, strike, years, interest, volatility);
+
+    cout << setprecision (2) << fixed << "Black-Scholes Formula Prediction: " << black_scholes_prediction << "\n";
+    cout << setprecision (2) << fixed << "Monte Carlo Simulation Prediction: " << monte_carlo_prediction << "\n";
+    cout << setprecision (2) << fixed << "Difference: " << abs(black_scholes_prediction - monte_carlo_prediction);
 
     return 0;
 }

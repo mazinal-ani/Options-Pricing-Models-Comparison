@@ -1,7 +1,11 @@
 #include <iostream>
+#include <algorithm>
 #include <cmath>
 #include <math.h>
+#include <random>
 using namespace std;
+
+
 
 ///////////////////////////////////////////////////////////////////
 // Input definitions
@@ -55,6 +59,8 @@ float implied_volatility()
 }
 ///////////////////////////////////////////////////////////////////
 
+
+
 ///////////////////////////////////////////////////////////////////
 // Black-Scholes Model
 
@@ -66,28 +72,55 @@ double c_std_normal_dist(double x)
     return result;
 }
 
-double black_scholes_model(float asset, float strike, float days, float div_yield, float interest, float volatility, bool call)
+double black_scholes_model(float asset, float strike, float years, float div_yield, float interest, float volatility, bool call)
 {
     float pred;
     double volatility_squared = pow (volatility, 2);
-    double d1 = (log(asset / strike) + (interest - div_yield + (volatility_squared / 2)) * days) / (volatility * sqrt(days));
-    double d2 = d1 - (volatility * sqrt(days));
+    double d1 = (log(asset / strike) + (interest - div_yield + (volatility_squared / 2)) * years) / (volatility * sqrt(years));
+    double d2 = d1 - (volatility * sqrt(years));
 
     if(call == true)
     {
-        pred = asset * c_std_normal_dist(d1) - (strike * (exp (-interest * days)) * c_std_normal_dist(d2));
+        pred = asset * c_std_normal_dist(d1) - (strike * (exp (-interest * years)) * c_std_normal_dist(d2));
     }
     else
     {
-        pred = (strike * (exp (-interest * days)) * c_std_normal_dist(-d2)) - (asset * c_std_normal_dist(-d1));
+        pred = (strike * (exp (-interest * years)) * c_std_normal_dist(-d2)) - (asset * c_std_normal_dist(-d1));
     }
 
     return pred;
 }
 ///////////////////////////////////////////////////////////////////
 
+
+
 ///////////////////////////////////////////////////////////////////
 // Monte Carlo Simulation
+double randn()
+{
+    default_random_engine generator;
+    normal_distribution<double> distribution(0.0, 1.0);
+    return distribution(generator);
+}
+
+double monte_carlo(float asset, float strike, float years, float interest, float volatility)
+{
+    const int time_steps = years * 365;
+    int total_payout = 0;
+    for (int i = 0; i < 1000; i ++)
+    {
+        float s_0 = asset;
+        for (int j = 0; j < time_steps; j++)
+        {
+            s_0 = s_0 * exp((interest - 0.5 * pow(volatility, 2)) * (1 / 365) + volatility * (sqrt(1/365)) * randn());
+        }
+        float payout = s_0 - strike;
+        total_payout += max(float (1 - 1), payout);
+    }
+   total_payout /= 1000;
+   return (total_payout * exp(-interest * years));
+}
+///////////////////////////////////////////////////////////////////
 
 
 
@@ -95,13 +128,14 @@ int main()
 {
     float asset = underlying_price();
     float strike = strike_price();
-    float days = maturity();
+    float years = maturity();
     float div = div_yield();
     float interest = interest_rate();
     float volatility = implied_volatility();
     bool call = true;
 
-    cout << black_scholes_model(asset, strike, days, div, interest, volatility, call);
+    cout << black_scholes_model(asset, strike, years, div, interest, volatility, call);
+    cout << monte_carlo(asset, strike, years, interest, volatility);
 
     return 0;
 }

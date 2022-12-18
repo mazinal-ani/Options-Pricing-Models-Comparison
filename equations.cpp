@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cmath>
 using namespace std;
 
 ///////////////////////////////////////////////////////////////////
@@ -40,6 +41,16 @@ int implied_volatility()
 }
 ///////////////////////////////////////////////////////////////////
 
+///////////////////////////////////////////////////////////////////
+// Black-Scholes Model
+
+double black_scholes_model(asset, strike, days, interest, volatility)
+{
+    double volatility_squared = pow (volatility, 2)
+    double d1 = (log(asset / strike) + (interest + (volatility_squared / 2) * days)) / (volatility * sqrt(days))
+    double d2 = d1 - (volatility * sqrt(days))
+}
+///////////////////////////////////////////////////////////////////
 
 int main()
 {

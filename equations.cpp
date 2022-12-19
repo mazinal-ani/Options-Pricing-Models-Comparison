@@ -4,6 +4,7 @@
 #include <math.h>
 #include <random>
 #include <iomanip>
+#include <chrono>
 using namespace std;
 
 
@@ -97,28 +98,33 @@ double black_scholes_model(float asset, float strike, float years, float div_yie
 
 ///////////////////////////////////////////////////////////////////
 // Monte Carlo Simulation
-double randn()
+
+double randn(float volatility)
 {
-    default_random_engine generator;
-    normal_distribution<double> distribution(0.0, 1.0);
+
+    unsigned seed = chrono::system_clock::now().time_since_epoch().count();
+    default_random_engine generator(seed);
+    normal_distribution<double> distribution(0.0,volatility);
     return distribution(generator);
+    
 }
 
 double monte_carlo(float asset, float strike, float years, float interest, float volatility)
 {
-    const int time_steps = years * 365;
+    const double time_steps = years / 252;
     int total_payout = 0;
-    for (int i = 0; i < 1000; i ++)
+    for (int i = 0; i < 10000; i ++)
     {
         float s_0 = asset;
-        for (int j = 0; j < time_steps; j++)
+        for (int j = 0; j < 252; j++)
         {
-            s_0 = s_0 * exp((interest - 0.5 * pow(volatility, 2)) * (1 / 365) + volatility * (sqrt(1/365)) * randn());
+          double random_variable = randn(volatility);
+          s_0 *= exp((interest - 0.5 * volatility * volatility) * time_steps + volatility * (sqrt(time_steps)) * random_variable);
         }
         float payout = s_0 - strike;
-        total_payout += max(float (1 - 1), payout);
+        total_payout += max(float(1-1), payout);
     }
-   total_payout /= 1000;
+   total_payout /= 10000;
    return (total_payout * exp(-interest * years));
 }
 ///////////////////////////////////////////////////////////////////

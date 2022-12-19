@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <iostream>
 #include <algorithm>
 #include <cmath>
@@ -59,6 +60,22 @@ float implied_volatility()
     cin >> iv;
     return iv;
 }
+
+float historical_mean_return()
+{
+    float mean;
+    cout << "What is the historical mean return of the underlying asset? ";
+    cin >> mean;
+    return mean;
+}
+
+float historical_std()
+{
+    float std;
+    cout << "What is the historical standard deviation of the underlying asset's returns? ";
+    cin >> std;
+    return std;
+}
 ///////////////////////////////////////////////////////////////////
 
 
@@ -99,29 +116,37 @@ double black_scholes_model(float asset, float strike, float years, float div_yie
 ///////////////////////////////////////////////////////////////////
 // Monte Carlo Simulation
 
-double randn(float volatility)
+double randn(float mean, float std)
 {
 
     unsigned seed = chrono::system_clock::now().time_since_epoch().count();
     default_random_engine generator(seed);
-    normal_distribution<double> distribution(0.0,volatility);
+    normal_distribution<double> distribution(mean,std);
     return distribution(generator);
     
 }
 
-double monte_carlo(float asset, float strike, float years, float interest, float volatility)
+double monte_carlo(float asset, float strike, float years, float interest, float volatility, float mean, float std, bool call)
 {
     const double time_steps = years / 252;
     int total_payout = 0;
     for (int i = 0; i < 10000; i ++)
     {
         float s_0 = asset;
+        float payout;
         for (int j = 0; j < 252; j++)
         {
-          double random_variable = randn(volatility);
+          double random_variable = randn(mean, std);
           s_0 *= exp((interest - 0.5 * volatility * volatility) * time_steps + volatility * (sqrt(time_steps)) * random_variable);
         }
-        float payout = s_0 - strike;
+        if (call == true)
+        {
+            payout = s_0 - strike;
+        }
+        else
+        {
+            payout = -1 * (s_0 - strike);
+        }
         total_payout += max(float(1-1), payout);
     }
    total_payout /= 10000;
@@ -139,14 +164,24 @@ int main()
     float div = div_yield();
     float interest = interest_rate();
     float volatility = implied_volatility();
-    bool call = true;
+    float mean = historical_mean_return();
+    float std = historical_std();
 
-    float black_scholes_prediction = black_scholes_model(asset, strike, years, div, interest, volatility, call);
-    float monte_carlo_prediction = monte_carlo(asset, strike, years, interest, volatility);
+    float black_scholes_call = black_scholes_model(asset, strike, years, div, interest, volatility, true);
+    float monte_carlo_call = monte_carlo(asset, strike, years, interest, volatility, mean, std, true);
 
-    cout << setprecision (2) << fixed << "Black-Scholes Formula Prediction: " << black_scholes_prediction << "\n";
-    cout << setprecision (2) << fixed << "Monte Carlo Simulation Prediction: " << monte_carlo_prediction << "\n";
-    cout << setprecision (2) << fixed << "Difference: " << abs(black_scholes_prediction - monte_carlo_prediction);
+    float black_scholes_put = black_scholes_model(asset, strike, years, div, interest, volatility, false);
+    float monte_carlo_put = monte_carlo(asset, strike, years, interest, volatility, mean, std, false);
+
+    cout<< "\n \n \n Results for the Call Option: \n \n";
+    cout << setprecision (2) << fixed << "Black-Scholes Formula Prediction: " << black_scholes_call << "\n";
+    cout << "Monte Carlo Simulation Prediction: " << monte_carlo_call << "\n";
+    cout << "Difference: " << abs(black_scholes_call - monte_carlo_call);
+
+    cout<< "\n \n \n Results for the Put Option: \n \n";
+    cout << "Black-Scholes Formula Prediction: " << black_scholes_put << "\n";
+    cout << "Monte Carlo Simulation Prediction: " << monte_carlo_put << "\n";
+    cout << "Difference: " << abs(black_scholes_put - monte_carlo_put);
 
     return 0;
 }
